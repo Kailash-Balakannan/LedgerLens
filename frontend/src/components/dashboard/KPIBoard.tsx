@@ -4,6 +4,7 @@ import type { KPIs } from '../../types';
 import { useReducedMotion } from '../../motion/useReducedMotion';
 import { CheckCircle2, AlertOctagon, Scale, Layers } from 'lucide-react';
 import { containerStaggerVariants, itemFadeInUpVariants } from '../../motion/motionTokens';
+import { AnimatedNumber } from '../../motion/AnimatedNumber';
 
 interface KPIBoardProps {
   kpis: KPIs;
@@ -15,7 +16,10 @@ export const KPIBoard: React.FC<KPIBoardProps> = ({ kpis }) => {
   const cards = [
     {
       label: 'Matched References',
-      value: kpis.matched_references,
+      numericValue: kpis.matched_references,
+      decimals: 0,
+      prefix: '',
+      suffix: '',
       pill: `${kpis.reconciliation_rate}% Rate`,
       pillColor: 'bg-tealmatch-bg text-tealmatch-light border-tealmatch-border/40',
       subtext: 'Fully settled & verified',
@@ -24,7 +28,10 @@ export const KPIBoard: React.FC<KPIBoardProps> = ({ kpis }) => {
     },
     {
       label: 'Unresolved Exceptions',
-      value: kpis.unresolved_exceptions,
+      numericValue: kpis.unresolved_exceptions,
+      decimals: 0,
+      prefix: '',
+      suffix: '',
       pill: 'Review Required',
       pillColor: 'bg-amberalert-bg text-amberalert-light border-amberalert-border/40',
       subtext: 'Requires forensic decision',
@@ -33,7 +40,10 @@ export const KPIBoard: React.FC<KPIBoardProps> = ({ kpis }) => {
     },
     {
       label: 'Amount Under Review',
-      value: `₹ ${kpis.amount_under_review.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      numericValue: kpis.amount_under_review,
+      decimals: 2,
+      prefix: '₹ ',
+      suffix: '',
       pill: 'Active Variance',
       pillColor: 'bg-cobalt-500/10 text-cobalt-300 border-cobalt-500/30',
       subtext: 'Investigative variance (not a loss)',
@@ -42,7 +52,10 @@ export const KPIBoard: React.FC<KPIBoardProps> = ({ kpis }) => {
     },
     {
       label: 'Total Reconciled References',
-      value: kpis.total_references,
+      numericValue: kpis.total_references,
+      decimals: 0,
+      prefix: '',
+      suffix: '',
       pill: '6 B / 6 L',
       pillColor: 'bg-ink-800 text-ink-300 border-ink-700',
       subtext: `${kpis.total_bank_records} Bank · ${kpis.total_ledger_records} Ledger records`,
@@ -62,7 +75,7 @@ export const KPIBoard: React.FC<KPIBoardProps> = ({ kpis }) => {
         <motion.div
           key={`kpi-${i}`}
           variants={prefersReduced ? undefined : itemFadeInUpVariants}
-          whileHover={prefersReduced ? undefined : { y: -1.5, transition: { duration: 0.15 } }}
+          whileHover={prefersReduced ? undefined : { y: -2, transition: { duration: 0.15 } }}
           className={`p-3.5 sm:p-4 rounded-xl bg-ink-900 border border-ink-800 border-l-[3px] ${c.accentBorder} shadow-sm hover:border-ink-700 hover:bg-ink-850/60 transition-all flex flex-col justify-between`}
         >
           {/* Card Header */}
@@ -70,18 +83,23 @@ export const KPIBoard: React.FC<KPIBoardProps> = ({ kpis }) => {
             <span className="text-[11px] font-mono font-medium text-ink-400 uppercase tracking-wider">
               {c.label}
             </span>
-            <div className="p-1 rounded-lg bg-ink-950 border border-ink-800">
+            <div className="p-1.5 rounded-lg bg-ink-950 border border-ink-800">
               {c.icon}
             </div>
           </div>
 
           {/* Metric Value & Badges */}
-          <div className="mt-2.5">
-            <div className="flex items-baseline justify-between">
-              <span className="num-tabular text-xl sm:text-2xl font-bold tracking-tight text-ink-100">
-                {c.value}
+          <div className="mt-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-1.5">
+              <span className="text-xl sm:text-2xl font-bold tracking-tight text-ink-100">
+                <AnimatedNumber
+                  value={c.numericValue}
+                  prefix={c.prefix}
+                  suffix={c.suffix}
+                  decimals={c.decimals}
+                />
               </span>
-              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${c.pillColor} font-semibold`}>
+              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${c.pillColor} font-semibold shrink-0`}>
                 {c.pill}
               </span>
             </div>

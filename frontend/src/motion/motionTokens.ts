@@ -85,15 +85,21 @@ export const drawerPanelVariants: Variants = {
 
 // Tab content variants
 export const tabContentVariants: Variants = {
-  hidden: { opacity: 0, y: 6 },
+  hidden: { opacity: 0, y: 10, scale: 0.994 },
   visible: { 
     opacity: 1, 
     y: 0, 
-    transition: { duration: 0.24, ease: EASINGS.easeOutCubic } 
+    scale: 1,
+    transition: { 
+      duration: 0.28, 
+      ease: EASINGS.easeOutCubic,
+      staggerChildren: 0.05
+    } 
   },
   exit: { 
     opacity: 0, 
-    y: -4, 
-    transition: { duration: 0.14, ease: 'easeIn' } 
+    y: -6, 
+    scale: 0.994,
+    transition: { duration: 0.16, ease: 'easeIn' } 
   }
 };

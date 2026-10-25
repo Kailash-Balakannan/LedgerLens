@@ -35,8 +35,7 @@ import {
   ShieldCheck, 
   RefreshCw 
 } from 'lucide-react';
-import { tabContentVariants } from './motion/motionTokens';
-import { useReducedMotion } from './motion/useReducedMotion';
+import { tabContentVariants, useReducedMotion, ClippedTitle } from './motion';
 
 export const App: React.FC = () => {
   const [welcomeDone, setWelcomeDone] = useState<boolean>(() => {
@@ -266,6 +265,47 @@ export const App: React.FC = () => {
                 exit="exit"
                 className="space-y-6"
               >
+                {/* Executive Hero Header */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-ink-800/60">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono tracking-widest uppercase bg-cobalt-500/10 text-cobalt-400 border border-cobalt-500/20 font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cobalt-400 animate-pulse" />
+                        Exasol Reconciliation Engine
+                      </span>
+                      <span className="text-xs text-ink-500 font-mono hidden sm:inline">
+                        Run: <span className="text-ink-300 font-semibold">{currentRunId}</span>
+                      </span>
+                    </div>
+                    <ClippedTitle
+                      text="Every discrepancy has a story. Find the evidence behind it."
+                      as="h1"
+                      className="text-xl sm:text-2xl lg:text-3xl font-display font-bold text-ink-100 tracking-tight"
+                    />
+                    <p className="text-xs sm:text-sm text-ink-400 max-w-2xl">
+                      Automated bank-to-ledger cross-matching, variance classification, and immutable audit trails powered by Exasol SQL.
+                    </p>
+                  </div>
+
+                  {/* Quick Telemetry Pills */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="px-3 py-1.5 rounded-xl bg-ink-900 border border-ink-800 text-[11px] font-mono flex items-center gap-2">
+                      <span className="text-ink-400">Match Rate:</span>
+                      <span className="text-tealmatch-light font-bold">
+                        {data.kpis.total_references > 0
+                          ? `${Math.round((data.kpis.matched_references / data.kpis.total_references) * 100)}%`
+                          : '0%'}
+                      </span>
+                    </div>
+                    <div className="px-3 py-1.5 rounded-xl bg-ink-900 border border-ink-800 text-[11px] font-mono flex items-center gap-2">
+                      <span className="text-ink-400">Audit Status:</span>
+                      <span className={data.kpis.unresolved_exceptions === 0 ? "text-tealmatch-light font-bold" : "text-amberalert-light font-bold"}>
+                        {data.kpis.unresolved_exceptions === 0 ? "Clean Recon" : `${data.kpis.unresolved_exceptions} Pending`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Executive KPIs */}
                 <KPIBoard kpis={data.kpis} />
 
@@ -280,20 +320,34 @@ export const App: React.FC = () => {
 
                 {/* Two Column Grid: Category Distribution & Priority Queue */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <CategoryBreakdown
-                    counts={data.category_counts}
-                    totalReferences={data.kpis.total_references}
-                    activeFilter={categoryFilter}
-                    onFilterCategory={(cat) => {
-                      setCategoryFilter(cat);
-                      setActiveTab('exceptions');
-                    }}
-                  />
+                  <motion.div
+                    initial={prefersReduced ? undefined : { opacity: 0, y: 16 }}
+                    whileInView={prefersReduced ? undefined : { opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-40px" }}
+                    transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <CategoryBreakdown
+                      counts={data.category_counts}
+                      totalReferences={data.kpis.total_references}
+                      activeFilter={categoryFilter}
+                      onFilterCategory={(cat) => {
+                        setCategoryFilter(cat);
+                        setActiveTab('exceptions');
+                      }}
+                    />
+                  </motion.div>
 
-                  <PriorityReviewQueue
-                    items={data.items}
-                    onSelectReference={(ref) => setSelectedReference(ref)}
-                  />
+                  <motion.div
+                    initial={prefersReduced ? undefined : { opacity: 0, y: 16 }}
+                    whileInView={prefersReduced ? undefined : { opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-40px" }}
+                    transition={{ duration: 0.45, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <PriorityReviewQueue
+                      items={data.items}
+                      onSelectReference={(ref) => setSelectedReference(ref)}
+                    />
+                  </motion.div>
                 </div>
               </motion.div>
             )}
