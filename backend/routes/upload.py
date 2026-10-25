@@ -159,6 +159,7 @@ async def upload_and_reconcile(
                 VALUES ('{run_id}', 'CSV_UPLOAD', '{source_name}', {len(df_bank)}, {len(df_ledger)}, CURRENT_TIMESTAMP)
             """)
 
+            now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             # 2. Stage Bank Records safely
             bank_stage_df = pd.DataFrame({
                 "RUN_ID": run_id,
@@ -167,7 +168,8 @@ async def upload_and_reconcile(
                 "TXN_DATE": df_bank["txn_date"],
                 "AMOUNT": df_bank["amount"],
                 "CURRENCY": df_bank["currency"],
-                "DESCRIPTION": df_bank["description"]
+                "DESCRIPTION": df_bank["description"],
+                "CREATED_AT": now_str
             })
             conn.import_from_pandas(bank_stage_df, (schema, "LEDGERLENS_BANK_STAGING"))
 
@@ -179,7 +181,8 @@ async def upload_and_reconcile(
                 "TXN_DATE": df_ledger["txn_date"],
                 "AMOUNT": df_ledger["amount"],
                 "CURRENCY": df_ledger["currency"],
-                "DESCRIPTION": df_ledger["description"]
+                "DESCRIPTION": df_ledger["description"],
+                "CREATED_AT": now_str
             })
             conn.import_from_pandas(ledger_stage_df, (schema, "LEDGERLENS_LEDGER_STAGING"))
 
