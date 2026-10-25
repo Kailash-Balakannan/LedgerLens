@@ -68,7 +68,7 @@ def export_audit_log_csv(run_id: str = Query("DEFAULT")):
             df = conn.export_to_pandas(f"""
                 SELECT 
                     HISTORY_ID, RUN_ID, REFERENCE, OLD_STATUS, NEW_STATUS, NOTE, REVIEWER_ID,
-                    TO_CHAR(CREATED_AT, 'YYYY-MM-DD HH24:MI:SS') AS TIMESTAMP
+                    TO_CHAR(CREATED_AT, 'YYYY-MM-DD HH24:MI:SS') AS AUDIT_TIMESTAMP
                 FROM {schema}.LEDGERLENS_REVIEW_HISTORY
                 WHERE RUN_ID = '{safe_run_id}'
                 ORDER BY CREATED_AT DESC
