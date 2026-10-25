@@ -147,10 +147,10 @@ EXASOL_ENCRYPTION=True
 
 ```powershell
 # Install backend requirements
-& "C:\Users\balak\AppData\Local\Python\bin\python.exe" -m pip install -r backend\requirements.txt
+python -m pip install -r backend\requirements.txt
 
 # Run automated tests against live Exasol SQL
-& "C:\Users\balak\AppData\Local\Python\bin\python.exe" -m pytest backend\tests\ -v
+python -m pytest backend\tests\ -v
 ```
 
 ---
@@ -159,8 +159,8 @@ EXASOL_ENCRYPTION=True
 
 In PowerShell Terminal 1:
 ```powershell
-cd c:\backup\projects\LedgeLens\backend
-& "C:\Users\balak\AppData\Local\Python\bin\python.exe" -m uvicorn main:app --host 127.0.0.1 --port 8000
+cd backend
+python -m uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 *API will be available at `http://127.0.0.1:8000`. Interactive docs at `http://127.0.0.1:8000/docs`.*
 
@@ -170,8 +170,8 @@ cd c:\backup\projects\LedgeLens\backend
 
 In PowerShell Terminal 2:
 ```powershell
-cd c:\backup\projects\LedgeLens\frontend
-npm.cmd run dev -- --host 127.0.0.1 --port 5173
+cd frontend
+npm run dev -- --host 127.0.0.1 --port 5173
 ```
 *Open your browser at `http://127.0.0.1:5173/`.*
 
@@ -182,7 +182,13 @@ npm.cmd run dev -- --host 127.0.0.1 --port 5173
 Run the full automated test suite covering Exasol connectivity, DDL initialization, SQL CTE reconciliation, and API endpoints:
 
 ```powershell
-& "C:\Users\balak\AppData\Local\Python\bin\python.exe" -m pytest backend\tests\ -v
+python -m pytest backend\tests\ -v
+```
+
+To run the Playwright browser end-to-end test suite:
+
+```powershell
+python tests_e2e\test_browser_e2e.py
 ```
 
 Test coverage includes:

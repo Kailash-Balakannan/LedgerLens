@@ -27,22 +27,32 @@ export const ExceptionInvestigationDrawer: React.FC<InvestigationDrawerProps> = 
   const [reviewerNote, setReviewerNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [successBanner, setSuccessBanner] = useState(false);
+  const currentRefId = useRef<string | null>(null);
   const prefersReduced = useReducedMotion();
 
   useEffect(() => {
     if (item) {
-      setSelectedStatus(item.review_status === 'UNREVIEWED' ? 'UNDER_INVESTIGATION' : item.review_status);
-      setReviewerNote(item.reviewer_note || '');
-      setSuccessBanner(false);
+      const isNewReference = currentRefId.current !== item.reference;
+      currentRefId.current = item.reference;
 
-      if (!prefersReduced && drawerRef.current && backdropRef.current) {
-        gsap.fromTo(backdropRef.current, { opacity: 0 }, { opacity: 1, duration: 0.3 });
-        gsap.fromTo(
-          drawerRef.current,
-          { x: '100%' },
-          { x: '0%', duration: 0.4, ease: 'power3.out' }
-        );
+      if (isNewReference) {
+        setSelectedStatus(item.review_status === 'UNREVIEWED' ? 'UNDER_INVESTIGATION' : item.review_status);
+        setReviewerNote(item.reviewer_note || '');
+        setSuccessBanner(false);
+
+        if (!prefersReduced && drawerRef.current && backdropRef.current) {
+          gsap.fromTo(backdropRef.current, { opacity: 0 }, { opacity: 1, duration: 0.3 });
+          gsap.fromTo(
+            drawerRef.current,
+            { x: '100%' },
+            { x: '0%', duration: 0.4, ease: 'power3.out' }
+          );
+        }
+      } else {
+        setSelectedStatus(item.review_status === 'UNREVIEWED' ? 'UNDER_INVESTIGATION' : item.review_status);
       }
+    } else {
+      currentRefId.current = null;
     }
   }, [item, prefersReduced]);
 
@@ -106,6 +116,7 @@ export const ExceptionInvestigationDrawer: React.FC<InvestigationDrawerProps> = 
 
           <button
             onClick={handleClose}
+            aria-label="Close drawer"
             className="p-1.5 rounded-lg bg-ink-800 hover:bg-ink-700 text-ink-400 hover:text-ink-100 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />

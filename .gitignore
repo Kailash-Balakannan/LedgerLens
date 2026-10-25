@@ -30,6 +30,7 @@ wheels/
 
 # Testing & logs
 .pytest_cache/
+test_reports/
 *.log
 
 # Node & Frontend

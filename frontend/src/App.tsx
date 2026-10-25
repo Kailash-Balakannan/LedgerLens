@@ -3,7 +3,8 @@ import {
   fetchHealth, 
   fetchReconciliation, 
   fetchRuns, 
-  submitReview 
+  submitReview,
+  fetchExceptionDetail
 } from './api';
 import type { 
   ReconciliationResponse, 
@@ -46,6 +47,7 @@ export const App: React.FC = () => {
   const [health, setHealth] = useState<DbHealth | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedReference, setSelectedReference] = useState<string | null>(null);
+  const [selectedDetail, setSelectedDetail] = useState<ReconciliationItem | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<ExceptionCategory | 'ALL'>('ALL');
   const [isAuditModalOpen, setIsAuditModalOpen] = useState<boolean>(false);
   const [reviewerName] = useState<string>('Finance Ops Reviewer');
@@ -54,6 +56,19 @@ export const App: React.FC = () => {
   useEffect(() => {
     loadInitialData();
   }, [currentRunId]);
+
+  // Fetch full exception detail including audit history when a reference is selected
+  useEffect(() => {
+    if (selectedReference) {
+      fetchExceptionDetail(currentRunId, selectedReference)
+        .then((detail) => setSelectedDetail(detail))
+        .catch((err) => {
+          console.error('Failed to fetch exception detail:', err);
+        });
+    } else {
+      setSelectedDetail(null);
+    }
+  }, [selectedReference, currentRunId]);
 
   const loadInitialData = async () => {
     setLoading(true);
@@ -82,9 +97,15 @@ export const App: React.FC = () => {
 
   const handleUpdateReview = async (reference: string, newStatus: ReviewStatus, note: string) => {
     await submitReview(currentRunId, reference, newStatus, note, reviewerName);
-    // Refresh dataset from Exasol
-    const refreshed = await fetchReconciliation(currentRunId);
+    // Refresh dataset and exception detail in parallel
+    const [refreshed, refreshedDetail] = await Promise.all([
+      fetchReconciliation(currentRunId),
+      fetchExceptionDetail(currentRunId, reference).catch(() => null)
+    ]);
     setData(refreshed);
+    if (refreshedDetail) {
+      setSelectedDetail(refreshedDetail);
+    }
   };
 
   const handleUploadSuccess = (newRunResult: ReconciliationResponse) => {
@@ -99,7 +120,8 @@ export const App: React.FC = () => {
     localStorage.setItem('ledgerlens_welcomed', 'true');
   };
 
-  const selectedItem: ReconciliationItem | null = data?.items.find((i) => i.reference === selectedReference) || null;
+  const fallbackItem: ReconciliationItem | null = data?.items.find((i) => i.reference === selectedReference) || null;
+  const activeItem: ReconciliationItem | null = selectedDetail || fallbackItem;
 
   return (
     <div className="min-h-screen bg-ink-950 text-ink-100 flex flex-col font-sans selection:bg-cobalt-500 selection:text-white">
@@ -289,7 +311,7 @@ export const App: React.FC = () => {
 
       {/* Slide-out Exception Investigation Drawer */}
       <ExceptionInvestigationDrawer
-        item={selectedItem}
+        item={activeItem}
         onClose={() => setSelectedReference(null)}
         onUpdateStatus={handleUpdateReview}
         reviewerId={reviewerName}

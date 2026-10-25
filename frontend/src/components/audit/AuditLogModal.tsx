@@ -72,6 +72,7 @@ export const AuditLogModal: React.FC<AuditLogModalProps> = ({ runId, isOpen, onC
 
             <button
               onClick={onClose}
+              aria-label="Close audit log"
               className="p-1.5 rounded-lg bg-ink-800 hover:bg-ink-700 text-ink-400 hover:text-ink-100 transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
