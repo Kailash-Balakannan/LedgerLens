@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   fetchHealth, 
   fetchReconciliation, 
@@ -34,10 +35,12 @@ import {
   ShieldCheck, 
   RefreshCw 
 } from 'lucide-react';
+import { tabContentVariants } from './motion/motionTokens';
+import { useReducedMotion } from './motion/useReducedMotion';
 
 export const App: React.FC = () => {
   const [welcomeDone, setWelcomeDone] = useState<boolean>(() => {
-    return localStorage.getItem('ledgerlens_welcomed') === 'true';
+    return localStorage.getItem('ledgerlens_welcomed') === 'true' || sessionStorage.getItem('ledgerlens_welcomed') === 'true';
   });
   
   const [activeTab, setActiveTab] = useState<'overview' | 'exceptions' | 'workspace'>('overview');
@@ -51,6 +54,7 @@ export const App: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<ExceptionCategory | 'ALL'>('ALL');
   const [isAuditModalOpen, setIsAuditModalOpen] = useState<boolean>(false);
   const [reviewerName] = useState<string>('Finance Ops Reviewer');
+  const prefersReduced = useReducedMotion();
 
   // Initial load
   useEffect(() => {
@@ -118,10 +122,23 @@ export const App: React.FC = () => {
   const handleWelcomeComplete = () => {
     setWelcomeDone(true);
     localStorage.setItem('ledgerlens_welcomed', 'true');
+    sessionStorage.setItem('ledgerlens_welcomed', 'true');
   };
 
   const fallbackItem: ReconciliationItem | null = data?.items.find((i) => i.reference === selectedReference) || null;
   const activeItem: ReconciliationItem | null = selectedDetail || fallbackItem;
+
+  const navTabs = [
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard, iconColor: 'text-cobalt-400', badge: null },
+    { 
+      id: 'exceptions', 
+      label: 'Exceptions Queue', 
+      icon: TableProperties, 
+      iconColor: 'text-amberalert-light',
+      badge: data && data.kpis.unresolved_exceptions > 0 ? data.kpis.unresolved_exceptions : null
+    },
+    { id: 'workspace', label: 'Ingestion Studio', icon: UploadCloud, iconColor: 'text-tealmatch-light', badge: null }
+  ] as const;
 
   return (
     <div className="min-h-screen bg-ink-950 text-ink-100 flex flex-col font-sans selection:bg-cobalt-500 selection:text-white">
@@ -129,7 +146,7 @@ export const App: React.FC = () => {
       {!welcomeDone && <WelcomeReveal onComplete={handleWelcomeComplete} />}
 
       {/* Top Header Bar */}
-      <header className="sticky top-0 z-30 bg-ink-950/80 backdrop-blur-md border-b border-ink-800/80 px-4 sm:px-6 py-3">
+      <header className="sticky top-0 z-30 bg-ink-950/85 backdrop-blur-md border-b border-ink-800/80 px-4 sm:px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           {/* Logo & Product Identity */}
           <div className="flex items-center gap-6">
@@ -144,61 +161,54 @@ export const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <nav className="flex items-center p-1 rounded-xl bg-ink-900 border border-ink-800 text-xs font-medium">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                activeTab === 'overview'
-                  ? 'bg-ink-800 text-ink-100 shadow-sm border border-ink-700/80'
-                  : 'text-ink-400 hover:text-ink-200'
-              }`}
-            >
-              <LayoutDashboard className="w-3.5 h-3.5 text-cobalt-400" />
-              <span>Overview</span>
-            </button>
+          {/* Navigation Tabs with Animated Floating Layout Indicator */}
+          <nav className="relative flex items-center p-1 rounded-xl bg-ink-900 border border-ink-800 text-xs font-medium">
+            {navTabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              const Icon = tab.icon;
 
-            <button
-              onClick={() => setActiveTab('exceptions')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                activeTab === 'exceptions'
-                  ? 'bg-ink-800 text-ink-100 shadow-sm border border-ink-700/80'
-                  : 'text-ink-400 hover:text-ink-200'
-              }`}
-            >
-              <TableProperties className="w-3.5 h-3.5 text-amberalert-light" />
-              <span>Exceptions Queue</span>
-              {data && data.kpis.unresolved_exceptions > 0 && (
-                <span className="num-tabular text-[10px] px-1.5 py-0.2 rounded-full bg-amberalert-bg text-amberalert-light font-bold">
-                  {data.kpis.unresolved_exceptions}
-                </span>
-              )}
-            </button>
-
-            <button
-              onClick={() => setActiveTab('workspace')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                activeTab === 'workspace'
-                  ? 'bg-ink-800 text-ink-100 shadow-sm border border-ink-700/80'
-                  : 'text-ink-400 hover:text-ink-200'
-              }`}
-            >
-              <UploadCloud className="w-3.5 h-3.5 text-tealmatch-light" />
-              <span>Ingestion Studio</span>
-            </button>
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer z-10 ${
+                    isActive ? 'text-ink-100 font-semibold' : 'text-ink-400 hover:text-ink-200'
+                  }`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeNavTab"
+                      className="absolute inset-0 bg-ink-800 rounded-lg border border-ink-700/80 shadow-sm -z-10"
+                      transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                    />
+                  )}
+                  <Icon className={`w-3.5 h-3.5 ${tab.iconColor}`} />
+                  <span>{tab.label}</span>
+                  {tab.badge !== null && (
+                    <span className="num-tabular text-[10px] px-1.5 py-0.2 rounded-full bg-amberalert-bg text-amberalert-light font-bold">
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </nav>
 
           {/* Utilities: Audit Trail, Export & DB Health */}
           <div className="flex items-center gap-2.5">
-            <button
+            <motion.button
+              whileHover={prefersReduced ? undefined : { scale: 1.05 }}
+              whileTap={prefersReduced ? undefined : { scale: 0.95 }}
               onClick={() => setIsAuditModalOpen(true)}
               className="p-2 rounded-xl bg-ink-900 hover:bg-ink-850 border border-ink-800 text-ink-300 hover:text-ink-100 transition-colors cursor-pointer"
               title="View full audit log"
             >
               <History className="w-4 h-4 text-cobalt-400" />
-            </button>
+            </motion.button>
 
-            <a
+            <motion.a
+              whileHover={prefersReduced ? undefined : { scale: 1.02 }}
+              whileTap={prefersReduced ? undefined : { scale: 0.98 }}
               href={`/api/export/csv?run_id=${encodeURIComponent(currentRunId)}`}
               download={`reconciliation_${currentRunId}.csv`}
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-ink-900 hover:bg-ink-850 border border-ink-800 text-xs text-ink-300 hover:text-ink-100 transition-colors font-mono cursor-pointer"
@@ -206,7 +216,7 @@ export const App: React.FC = () => {
             >
               <Download className="w-3.5 h-3.5 text-ink-400" />
               <span>Export CSV</span>
-            </a>
+            </motion.a>
 
             <ConnectionPill
               health={health}
@@ -245,10 +255,17 @@ export const App: React.FC = () => {
             </button>
           </div>
         ) : (
-          <>
+          <AnimatePresence mode="wait">
             {/* View Tab 1: Overview */}
             {activeTab === 'overview' && (
-              <div className="space-y-6 animate-fadeIn">
+              <motion.div
+                key="overview-tab"
+                variants={prefersReduced ? undefined : tabContentVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="space-y-6"
+              >
                 {/* Executive KPIs */}
                 <KPIBoard kpis={data.kpis} />
 
@@ -278,12 +295,18 @@ export const App: React.FC = () => {
                     onSelectReference={(ref) => setSelectedReference(ref)}
                   />
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* View Tab 2: Exceptions Table */}
             {activeTab === 'exceptions' && (
-              <div className="animate-fadeIn">
+              <motion.div
+                key="exceptions-tab"
+                variants={prefersReduced ? undefined : tabContentVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
                 <ExceptionsTable
                   items={data.items}
                   selectedReference={selectedReference}
@@ -291,21 +314,27 @@ export const App: React.FC = () => {
                   activeCategoryFilter={categoryFilter}
                   onFilterCategory={setCategoryFilter}
                 />
-              </div>
+              </motion.div>
             )}
 
             {/* View Tab 3: Ingestion Studio */}
             {activeTab === 'workspace' && (
-              <div className="animate-fadeIn">
+              <motion.div
+                key="workspace-tab"
+                variants={prefersReduced ? undefined : tabContentVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
                 <ReconciliationWorkspace
                   currentRunId={currentRunId}
                   runs={runs}
                   onSelectRun={(runId) => setCurrentRunId(runId)}
                   onUploadSuccess={handleUploadSuccess}
                 />
-              </div>
+              </motion.div>
             )}
-          </>
+          </AnimatePresence>
         )}
       </main>
 

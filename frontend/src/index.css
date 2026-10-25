@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -10,31 +10,65 @@
 
 body {
   margin: 0;
-  background-color: #070A0F;
-  color: #F8FAFC;
+  background-color: #07090E;
+  color: #F1F5F9;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 
+/* Multi-tiered Surface Hierarchy */
+.surface-canvas {
+  background-color: #07090E;
+}
+
+.surface-panel {
+  background-color: #0C1019;
+  border-color: #1A2333;
+}
+
+.surface-card {
+  background-color: #111723;
+  border-color: #1E293B;
+}
+
+.surface-elevated {
+  background-color: #161F30;
+  border-color: #26354D;
+}
+
+/* Precision Tabular Numbers */
+.num-tabular {
+  font-variant-numeric: tabular-nums;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Subtle Data Grid Pattern Background */
+.bg-grid-subtle {
+  background-size: 24px 24px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+
 /* Custom crisp dark scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0D121D;
+  background: #0C1019;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #22314D;
-  border-radius: 4px;
+  background: #1E293B;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #314468;
+  background: #2E3E57;
 }
 
 /* Reduced motion accessibility */
@@ -47,10 +81,4 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-/* Precision tabular numbers */
-.num-tabular {
-  font-variant-numeric: tabular-nums;
-  font-family: 'JetBrains Mono', monospace;
 }

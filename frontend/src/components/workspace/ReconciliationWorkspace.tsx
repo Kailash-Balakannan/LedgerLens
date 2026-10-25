@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { uploadAndReconcile } from '../../api';
 import type { RunInfo, ReconciliationResponse } from '../../types';
-import { UploadCloud, CheckCircle2, AlertCircle, Download, RefreshCw, Database } from 'lucide-react';
+import { UploadCloud, AlertCircle, Download, RefreshCw, Database, FileSpreadsheet } from 'lucide-react';
+import { useReducedMotion } from '../../motion/useReducedMotion';
 
 interface ReconciliationWorkspaceProps {
   currentRunId: string;
@@ -18,8 +20,11 @@ export const ReconciliationWorkspace: React.FC<ReconciliationWorkspaceProps> = (
 }) => {
   const [bankFile, setBankFile] = useState<File | null>(null);
   const [ledgerFile, setLedgerFile] = useState<File | null>(null);
+  const [isBankDragging, setIsBankDragging] = useState(false);
+  const [isLedgerDragging, setIsLedgerDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const prefersReduced = useReducedMotion();
 
   const handleBankChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -31,6 +36,24 @@ export const ReconciliationWorkspace: React.FC<ReconciliationWorkspaceProps> = (
   const handleLedgerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setLedgerFile(e.target.files[0]);
+      setErrors([]);
+    }
+  };
+
+  const handleBankDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsBankDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setBankFile(e.dataTransfer.files[0]);
+      setErrors([]);
+    }
+  };
+
+  const handleLedgerDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsLedgerDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setLedgerFile(e.dataTransfer.files[0]);
       setErrors([]);
     }
   };
@@ -71,7 +94,7 @@ export const ReconciliationWorkspace: React.FC<ReconciliationWorkspaceProps> = (
               {currentRunId}
             </span>
           </div>
-          <p className="text-xs text-ink-500 mt-1">
+          <p className="text-xs text-ink-400 mt-1">
             Reconciliation runs execute directly on Exasol tables. Source records remain strictly isolated.
           </p>
         </div>
@@ -127,26 +150,44 @@ export const ReconciliationWorkspace: React.FC<ReconciliationWorkspaceProps> = (
         </div>
 
         {/* Validation Errors Alert */}
-        {errors.length > 0 && (
-          <div className="p-4 mb-6 rounded-xl bg-redcrit-bg border border-redcrit-border text-redcrit-light text-xs space-y-1.5 animate-fadeIn">
-            <div className="flex items-center gap-1.5 font-bold">
-              <AlertCircle className="w-4 h-4" />
-              <span>Validation Issues Detected:</span>
-            </div>
-            {errors.map((err, i) => (
-              <div key={`err-${i}`} className="pl-5 text-[11px] leading-relaxed">
-                • {err}
+        <AnimatePresence>
+          {errors.length > 0 && (
+            <motion.div
+              initial={prefersReduced ? false : { opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="p-4 mb-6 rounded-xl bg-redcrit-bg border border-redcrit-border text-redcrit-light text-xs space-y-1.5"
+            >
+              <div className="flex items-center gap-1.5 font-bold">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>Validation Issues Detected:</span>
               </div>
-            ))}
-          </div>
-        )}
+              {errors.map((err, i) => (
+                <div key={`err-${i}`} className="pl-5 text-[11px] leading-relaxed">
+                  • {err}
+                </div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Upload Dropzones */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Bank Statement Dropzone */}
-            <div className="p-5 rounded-xl bg-ink-850/80 border border-dashed border-cobalt-500/40 flex flex-col items-center justify-center text-center relative group hover:border-cobalt-400 transition-colors">
-              <UploadCloud className="w-8 h-8 text-cobalt-400 mb-2 group-hover:scale-110 transition-transform" />
+            <motion.div
+              onDragOver={(e) => { e.preventDefault(); setIsBankDragging(true); }}
+              onDragLeave={() => setIsBankDragging(false)}
+              onDrop={handleBankDrop}
+              animate={{
+                scale: isBankDragging ? 1.02 : 1,
+                borderColor: isBankDragging ? '#60A5FA' : 'rgba(37,99,235,0.4)'
+              }}
+              className={`p-6 rounded-xl bg-ink-850/80 border border-dashed flex flex-col items-center justify-center text-center relative transition-all ${
+                isBankDragging ? 'bg-cobalt-500/10 shadow-glow' : 'hover:border-cobalt-400'
+              }`}
+            >
+              <UploadCloud className={`w-8 h-8 mb-2 transition-transform ${isBankDragging ? 'scale-110 text-cobalt-300' : 'text-cobalt-400'}`} />
               <span className="text-xs font-mono font-semibold text-ink-100 uppercase tracking-wider">
                 1. Bank Transactions File
               </span>
@@ -154,7 +195,7 @@ export const ReconciliationWorkspace: React.FC<ReconciliationWorkspaceProps> = (
                 Expected columns: <code className="text-cobalt-300 font-mono">REFERENCE</code>, <code className="text-cobalt-300 font-mono">TXN_DATE</code>, <code className="text-cobalt-300 font-mono">AMOUNT</code>, <code className="text-cobalt-300 font-mono">CURRENCY</code>
               </p>
 
-              <label className="mt-3 px-4 py-2 rounded-xl bg-cobalt-500/10 hover:bg-cobalt-500/20 border border-cobalt-500/30 text-cobalt-300 text-xs font-semibold cursor-pointer transition-colors">
+              <label className="mt-4 px-4 py-2 rounded-xl bg-cobalt-500/15 hover:bg-cobalt-500/25 border border-cobalt-500/40 text-cobalt-200 text-xs font-semibold cursor-pointer transition-colors shadow-sm">
                 <span>{bankFile ? bankFile.name : 'Choose Bank CSV'}</span>
                 <input
                   type="file"
@@ -165,16 +206,31 @@ export const ReconciliationWorkspace: React.FC<ReconciliationWorkspaceProps> = (
               </label>
 
               {bankFile && (
-                <div className="flex items-center gap-1 text-[11px] text-tealmatch-light mt-2 font-mono">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
+                <motion.div
+                  initial={prefersReduced ? false : { opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center gap-1.5 text-[11px] text-tealmatch-light mt-2.5 font-mono bg-tealmatch-bg px-2.5 py-1 rounded-md border border-tealmatch-border/40"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
                   <span>Ready ({(bankFile.size / 1024).toFixed(1)} KB)</span>
-                </div>
+                </motion.div>
               )}
-            </div>
+            </motion.div>
 
             {/* Ledger Transactions Dropzone */}
-            <div className="p-5 rounded-xl bg-ink-850/80 border border-dashed border-tealmatch-border flex flex-col items-center justify-center text-center relative group hover:border-tealmatch-light transition-colors">
-              <UploadCloud className="w-8 h-8 text-tealmatch-light mb-2 group-hover:scale-110 transition-transform" />
+            <motion.div
+              onDragOver={(e) => { e.preventDefault(); setIsLedgerDragging(true); }}
+              onDragLeave={() => setIsLedgerDragging(false)}
+              onDrop={handleLedgerDrop}
+              animate={{
+                scale: isLedgerDragging ? 1.02 : 1,
+                borderColor: isLedgerDragging ? '#14B8A6' : 'rgba(20,184,166,0.35)'
+              }}
+              className={`p-6 rounded-xl bg-ink-850/80 border border-dashed flex flex-col items-center justify-center text-center relative transition-all ${
+                isLedgerDragging ? 'bg-tealmatch-bg shadow-glow' : 'hover:border-tealmatch-light'
+              }`}
+            >
+              <UploadCloud className={`w-8 h-8 mb-2 transition-transform ${isLedgerDragging ? 'scale-110 text-tealmatch-light' : 'text-tealmatch-light'}`} />
               <span className="text-xs font-mono font-semibold text-ink-100 uppercase tracking-wider">
                 2. Internal Ledger File
               </span>
@@ -182,7 +238,7 @@ export const ReconciliationWorkspace: React.FC<ReconciliationWorkspaceProps> = (
                 Expected columns: <code className="text-tealmatch-light font-mono">REFERENCE</code>, <code className="text-tealmatch-light font-mono">TXN_DATE</code>, <code className="text-tealmatch-light font-mono">AMOUNT</code>, <code className="text-tealmatch-light font-mono">DESCRIPTION</code>
               </p>
 
-              <label className="mt-3 px-4 py-2 rounded-xl bg-tealmatch-bg hover:bg-tealmatch-bg/80 border border-tealmatch-border text-tealmatch-light text-xs font-semibold cursor-pointer transition-colors">
+              <label className="mt-4 px-4 py-2 rounded-xl bg-tealmatch-bg hover:bg-tealmatch-bg/80 border border-tealmatch-border text-tealmatch-light text-xs font-semibold cursor-pointer transition-colors shadow-sm">
                 <span>{ledgerFile ? ledgerFile.name : 'Choose Ledger CSV'}</span>
                 <input
                   type="file"
@@ -193,13 +249,33 @@ export const ReconciliationWorkspace: React.FC<ReconciliationWorkspaceProps> = (
               </label>
 
               {ledgerFile && (
-                <div className="flex items-center gap-1 text-[11px] text-tealmatch-light mt-2 font-mono">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
+                <motion.div
+                  initial={prefersReduced ? false : { opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center gap-1.5 text-[11px] text-tealmatch-light mt-2.5 font-mono bg-tealmatch-bg px-2.5 py-1 rounded-md border border-tealmatch-border/40"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
                   <span>Ready ({(ledgerFile.size / 1024).toFixed(1)} KB)</span>
-                </div>
+                </motion.div>
               )}
-            </div>
+            </motion.div>
           </div>
+
+          {/* Upload Progress Bar if processing */}
+          {uploading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="w-full bg-ink-950 rounded-full h-1.5 overflow-hidden border border-ink-800"
+            >
+              <motion.div
+                className="bg-cobalt-500 h-full rounded-full"
+                animate={{ x: ['-100%', '100%'] }}
+                transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}
+                style={{ width: '50%' }}
+              />
+            </motion.div>
+          )}
 
           {/* Action Row */}
           <div className="flex items-center justify-between pt-2">
@@ -207,14 +283,16 @@ export const ReconciliationWorkspace: React.FC<ReconciliationWorkspaceProps> = (
               Protected against SQL injection and binary floating point inaccuracies.
             </span>
 
-            <button
+            <motion.button
               type="submit"
+              whileHover={prefersReduced ? undefined : { scale: uploading || !bankFile || !ledgerFile ? 1 : 1.02 }}
+              whileTap={prefersReduced ? undefined : { scale: uploading || !bankFile || !ledgerFile ? 1 : 0.98 }}
               disabled={uploading || !bankFile || !ledgerFile}
               className="px-6 py-2.5 rounded-xl bg-cobalt-500 hover:bg-cobalt-600 disabled:opacity-40 text-white text-xs font-bold shadow-glow flex items-center gap-2 transition-all cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${uploading ? 'animate-spin' : ''}`} />
               <span>{uploading ? 'Reconciling in Exasol...' : 'Execute Exasol Reconciliation'}</span>
-            </button>
+            </motion.button>
           </div>
         </form>
       </div>
